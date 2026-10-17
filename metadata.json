@@ -1,0 +1,6 @@
+{
+  "name": "TextVerified Hub - Autonomous SMS Verification",
+  "description": "Autonomous SMS and OTP verification engine powered by TextVerified API v2 with real-time tracking, auto-refund safeguards, and cloud persistence.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

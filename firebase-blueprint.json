@@ -1,0 +1,70 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile settings and configuration for TextVerified automation",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "displayName": { "type": "string", "maxLength": 128 },
+        "photoURL": { "type": "string", "maxLength": 1024 },
+        "useSimulator": { "type": "boolean" },
+        "preferredLanguage": { "type": "string", "maxLength": 10 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "createdAt", "updatedAt"]
+    },
+    "VerificationRecord": {
+      "title": "VerificationRecord",
+      "description": "SMS and OTP verification session record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "targetService": { "type": "string", "maxLength": 64 },
+        "phoneNumber": { "type": "string", "maxLength": 32 },
+        "status": {
+          "type": "string",
+          "enum": ["Pending", "Completed", "TimedOut", "Cancelled"]
+        },
+        "smsCode": { "type": "string", "maxLength": 32 },
+        "fullMessage": { "type": "string", "maxLength": 500 },
+        "cost": { "type": "number" },
+        "isSimulated": { "type": "boolean" },
+        "autoRefunded": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "targetService", "phoneNumber", "status", "cost", "createdAt", "updatedAt"]
+    },
+    "ActivityLog": {
+      "title": "ActivityLog",
+      "description": "Audit and operational activity log entry",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "action": { "type": "string", "maxLength": 64 },
+        "details": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "action", "details", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile documents"
+    },
+    "/users/{userId}/verifications/{verificationId}": {
+      "schema": "VerificationRecord",
+      "description": "Individual verification attempts and captured OTP codes"
+    },
+    "/users/{userId}/activityLogs/{logId}": {
+      "schema": "ActivityLog",
+      "description": "Log entries for verification actions and status changes"
+    }
+  }
+}

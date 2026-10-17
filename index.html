@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TextVerified Hub - Autonomous SMS Verification</title>
+    <meta name="description" content="Autonomous SMS and OTP verification engine powered by TextVerified API v2 with real-time tracking, auto-refund safeguards, and cloud persistence." />
+    <meta property="og:title" content="TextVerified Hub - Autonomous SMS Verification" />
+    <meta property="og:description" content="Autonomous SMS and OTP verification engine powered by TextVerified API v2 with real-time tracking, auto-refund safeguards, and cloud persistence." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#10b981" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="TextVerified" />
+    <link rel="icon" type="image/svg+xml" href="/icon-192.svg" />
+    <link rel="apple-touch-icon" href="/icon-192.svg" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+  </head>
+  <body class="bg-slate-950 text-slate-100 antialiased selection:bg-emerald-500 selection:text-white">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch((err) => {
+            console.log('[PWA] Service Worker registration skipped/failed:', err);
+          });
+        });
+      }
+    </script>
+  </body>
+</html>
+

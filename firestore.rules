@@ -1,0 +1,115 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny-all safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isOwner(userId) {
+      return isVerifiedUser() && request.auth.uid == userId;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Entity Validators
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['uid', 'email', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'email', 'displayName', 'photoURL', 'useSimulator', 'preferredLanguage', 'createdAt', 'updatedAt'])
+        && data.uid is string && data.uid.size() <= 128 && data.uid == request.auth.uid
+        && data.email is string && data.email.size() <= 256
+        && (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 128))
+        && (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 1024))
+        && (!('useSimulator' in data) || data.useSimulator is bool)
+        && (!('preferredLanguage' in data) || (data.preferredLanguage is string && data.preferredLanguage.size() <= 10))
+        && data.createdAt is string && data.createdAt.size() <= 64
+        && data.updatedAt is string && data.updatedAt.size() <= 64;
+    }
+
+    function isValidVerificationRecord(data) {
+      return data.keys().hasAll(['id', 'userId', 'targetService', 'phoneNumber', 'status', 'cost', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'userId', 'targetService', 'phoneNumber', 'status', 'smsCode', 'fullMessage', 'cost', 'isSimulated', 'autoRefunded', 'createdAt', 'updatedAt'])
+        && data.id is string && data.id.size() <= 128
+        && data.userId is string && data.userId == request.auth.uid
+        && data.targetService is string && data.targetService.size() <= 64
+        && data.phoneNumber is string && data.phoneNumber.size() <= 32
+        && (data.status in ['Pending', 'Completed', 'TimedOut', 'Cancelled'])
+        && (!('smsCode' in data) || (data.smsCode is string && data.smsCode.size() <= 32))
+        && (!('fullMessage' in data) || (data.fullMessage is string && data.fullMessage.size() <= 500))
+        && data.cost is number
+        && (!('isSimulated' in data) || data.isSimulated is bool)
+        && (!('autoRefunded' in data) || data.autoRefunded is bool)
+        && data.createdAt is string && data.createdAt.size() <= 64
+        && data.updatedAt is string && data.updatedAt.size() <= 64;
+    }
+
+    function isValidActivityLog(data) {
+      return data.keys().hasAll(['id', 'userId', 'action', 'details', 'createdAt'])
+        && data.keys().hasOnly(['id', 'userId', 'action', 'details', 'createdAt'])
+        && data.id is string && data.id.size() <= 128
+        && data.userId is string && data.userId == request.auth.uid
+        && data.action is string && data.action.size() <= 64
+        && data.details is string && data.details.size() <= 500
+        && data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
+    // Test connection doc for initial boot health check
+    match /test/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // User Profile
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false; // Users can only access their individual root profile doc
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming());
+      allow update: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming())
+                    && incoming().uid == existing().uid
+                    && incoming().createdAt == existing().createdAt;
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      // Verifications Subcollection
+      match /verifications/{verificationId} {
+        allow get: if isOwner(userId) && isValidId(verificationId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(verificationId) && isValidVerificationRecord(incoming());
+        allow update: if isOwner(userId) && isValidId(verificationId) && isValidVerificationRecord(incoming())
+                      && incoming().id == existing().id
+                      && incoming().userId == existing().userId
+                      && incoming().phoneNumber == existing().phoneNumber
+                      && incoming().createdAt == existing().createdAt;
+        allow delete: if isOwner(userId) && isValidId(verificationId);
+      }
+
+      // Activity Logs Subcollection
+      match /activityLogs/{logId} {
+        allow get: if isOwner(userId) && isValidId(logId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(logId) && isValidActivityLog(incoming());
+        allow update: if false; // Audit logs are immutable
+        allow delete: if isOwner(userId) && isValidId(logId);
+      }
+    }
+  }
+}
